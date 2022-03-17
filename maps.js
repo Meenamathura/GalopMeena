@@ -152,12 +152,15 @@ require([
         }
     });
 
+
     const view = new MapView({
         map: map,
         center: new Point({ x: 1795999, y: 5457405, spatialReference: { wkid: 2193 } }), // nztm coordinates, 
         zoom: 10, // Zoom level
-        container: "viewDiv" // Div element
-
+        container: "viewDiv", // Div element
+    padding: {
+        left:49,
+    },
     }); view.popup.defaultPopupTemplateEnabled = true;
 
     const locate = new Locate({
@@ -172,10 +175,12 @@ require([
 
     const elevationProfile = new ElevationProfile({
         view: view,
-        profiles: [{ type: "ground" }]
+        profiles: [{ type: "ground" }],
+        container: "profile",
     });
     view.when(function () {
-        view.ui.add(elevationProfile);
+       // view.ui.add(elevationProfile);
+       
     });
     const basemapGallery = new BasemapGallery({
         view: view,
@@ -190,6 +195,36 @@ require([
 
         // Add widget to the top right corner of the view
         view.ui.add(layerList, "top-right");
+        let activeWidget;
+
+        // here we define the code which should run when our action bar is clicked
+        const handleActionBarClick = ({ target }) => {
+          // make sure we are clicking on a calcite action button
+          if (target.tagName !== "CALCITE-ACTION") {
+            return;
+          }
+      
+          // check if there is an active widget and if so hide it
+          if (activeWidget) {
+            document.querySelector(
+              `[data-action-id=${activeWidget}]`
+            ).active = false;
+            document.querySelector(`[data-panel-id=${activeWidget}]`).hidden = true;
+          }
+      
+          // determine which widget button was clicked. If it's the button for the currently active widget
+          // then we just set the active widget to null (as we already hid it), else we hide the current widget and show the next
+          const nextWidget = target.dataset.actionId;
+          if (nextWidget !== activeWidget) {
+            document.querySelector(`[data-action-id=${nextWidget}]`).active = true;
+            document.querySelector(`[data-panel-id=${nextWidget}]`).hidden = false;
+            activeWidget = nextWidget;
+          } else {
+            activeWidget = null;
+          }
+        };
+        // here we actually add the code to the action bar
+        document.querySelector("calcite-action-bar").addEventListener("click", handleActionBarClick);
+      });
     });
 
-});
